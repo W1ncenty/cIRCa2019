@@ -71,22 +71,23 @@ public class MainViewController implements Initializable {
                 Socket socket = new Socket(Utils.IP, Utils.PORT);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-                
+
                 irc.setSocket(socket);
                 irc.setReader(reader);
                 irc.setWriter(writer);
-                
+
                 System.out.println("Connected: " + socket);
-                
-               
 
                 //Sprawdz dostepnosc nickname na serwerze
                 irc.getUser().setUsername(nicknameTextArea.getText());
                 irc.getWriter().println("0" + irc.getUser().getUsername());
                 irc.getUser().setConnected(true);
 
-                irc.getChatRoomController().getWaitingForMessagesRunnable().setStopped(false);
-                irc.getChatRoomController().displayMessages();
+                if (irc.getSocket() != null) {
+                    irc.getChatRoomController().getWaitingForMessagesRunnable().setStopped(false);
+                    irc.getChatRoomController().displayMessages();
+
+                }
 
                 this.connectionLabel.setTextFill(Color.web("00ff00"));
             } catch (IOException ex) {
@@ -123,7 +124,7 @@ public class MainViewController implements Initializable {
 
     public void setIrc(IRC irc) {
         this.irc = irc;
-        
+
     }
 
     public void bindUser() {
@@ -165,12 +166,35 @@ public class MainViewController implements Initializable {
 
     @FXML
     private void leaveChatroom(ActionEvent event) {
-        
+
     }
 
     @FXML
     private void createChatroom(ActionEvent event) {
-        
+
+        try {
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(irc.getClass().getResource("view/CreateChanel.fxml"));
+            AnchorPane createChanel = loader.load();
+
+            Stage chanelsStage = new Stage();
+            chanelsStage.setTitle("Create chanel");
+            chanelsStage.initModality(Modality.WINDOW_MODAL);
+            chanelsStage.initOwner(irc.getStage());
+
+            Scene scene = new Scene(createChanel);
+            chanelsStage.setScene(scene);
+
+            CreateChanelController controller = loader.getController();
+            controller.setStage(chanelsStage);
+            controller.setIrc(irc);
+
+            chanelsStage.showAndWait();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
 }

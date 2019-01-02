@@ -115,19 +115,19 @@ public class ChatRoomController implements Initializable {
     
     public void displayChatroomList() {
         chatRoomList.setItems(irc.getUser().getChanels());
-//        chatRoomList.setCellFactory(param -> new ListCell<Chanel>() {
-//            @Override
-//            protected void updateItem(Chanel item, boolean empty) {
-//                super.updateItem(item, empty);
-//                
-//                if (empty || item == null || item.getChanelName() == null) {
-//                    setText(null);
-//                } else {
-//                    setText(item.getChanelName());
-//                }
-//            }
-//        });
-//        
+        chatRoomList.setCellFactory(param -> new ListCell<Chanel>() {
+            @Override
+            protected void updateItem(Chanel item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                if (empty || item == null || item.getChanelName() == null) {
+                    setText(null);
+                } else {
+                    setText(item.getChanelName());
+                }
+            }
+        });
+        
         chatRoomList.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Chanel>() {
 
             @Override
@@ -139,7 +139,7 @@ public class ChatRoomController implements Initializable {
     }
     
     public void refreshList() {
-        //chatRoomList.refresh();
+        chatRoomList.refresh();
     }
     
     private void sendFunction() {
