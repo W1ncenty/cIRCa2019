@@ -53,6 +53,7 @@ void *ThreadBehavior_Read(void *t_data) {
 void *ThreadBehavior_Write(void *t_data) {
 
     pthread_detach(pthread_self());
+
     struct thread_data_t *th_data = (struct thread_data_t*)t_data;
     //dostęp do pól struktury: (*th_data).pole
 
@@ -132,6 +133,8 @@ int main(int argc, char*argv[]) {
     } else {
         sscanf (argv[1],"%d",&port_num);
     }
+
+    printf("cIRCa2019\n");
 
     //initializacja gniazda serwera
     memset(&server_address, 0, sizeof(struct sockaddr));
