@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="irc.controller.JoinChanelsController">
+   <children>
+      <ChoiceBox fx:id="choiceBox" layoutX="128.0" layoutY="185.0" onDragDetected="#chooseChatRoom" prefHeight="31.0" prefWidth="344.0" />
+      <Label alignment="CENTER" contentDisplay="CENTER" layoutX="156.0" layoutY="99.0" prefHeight="21.0" prefWidth="289.0" text="Available chat rooms">
+         <font>
+            <Font name="System Bold" size="24.0" />
+         </font>
+      </Label>
+      <Button layoutX="505.0" layoutY="332.0" mnemonicParsing="false" onAction="#ok" text="OK" />
+      <Button layoutX="413.0" layoutY="332.0" mnemonicParsing="false" onAction="#cancel" text="Cancel" />
+   </children>
+</AnchorPane>
