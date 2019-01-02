@@ -132,7 +132,7 @@ public class ChatRoomController implements Initializable {
 
             @Override
             public void changed(ObservableValue<? extends Chanel> observable, Chanel oldValue, Chanel newValue) {
-                System.out.println(newValue.getChanelName());
+                activeChanel = newValue;
             }
         });
         
@@ -161,5 +161,15 @@ public class ChatRoomController implements Initializable {
     public WaitingForMessages getWaitingForMessagesRunnable() {
         return waitingForMessagesRunnable;
     }
+
+    public Chanel getActiveChanel() {
+        return activeChanel;
+    }
+
+    public void setActiveChanel(Chanel activeChanel) {
+        this.activeChanel = activeChanel;
+    }
+    
+    
     
 }

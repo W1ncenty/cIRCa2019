@@ -166,6 +166,7 @@ public class MainViewController implements Initializable {
 
     @FXML
     private void leaveChatroom(ActionEvent event) {
+        System.out.println(irc.getChatRoomController().getActiveChanel().getChanelName());
 
     }
 
