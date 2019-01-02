@@ -12,106 +12,78 @@
 #include <time.h>
 #include <pthread.h>
 
-#define SERVER_PORT 1234
+//#define SERVER_PORT 1234
 #define QUEUE_SIZE 5
+#define MESSAGE_LENGTH 256
+#define NUMBER_OF_CLIENTS 5
+
+struct user_t {
+    int id;
+    char name[64];
+    int chatrooms[64]; // lista pokoi w których znajduje
+};
+
+struct chatroom_t {
+    int id;
+    char name[64];
+    int users[64];
+    char messages[64][512];
+};
 
 struct thread_data_t {
     int licznik;
     int soc;
-    char r_msg[64];
-    char w_msg[64];
+    char incoming_message[MESSAGE_LENGTH];
 };
 
-pthread_mutex_t mutex_w = PTHREAD_MUTEX_INITIALIZER;;
-pthread_mutex_t mutex_r = PTHREAD_MUTEX_INITIALIZER;;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int client_sockets[5];
+int client_sockets[NUMBER_OF_CLIENTS];
+char messages[64][MESSAGE_LENGTH];
+char incoming_message[MESSAGE_LENGTH];
 
-void *ThreadBehavior_Read(void *t_data) {
-
-    pthread_detach(pthread_self());
-    struct thread_data_t *th_data = (struct thread_data_t*)t_data;
-    //dostęp do pól struktury: (*th_data).pole
-
-    // odbieranie wiadomości i wypisywanie ich na konsolę
-    while(1){
-        //pthread_mutex_lock(&mutex_r);
-        //printf("blokada dla odczytu!\n");
-        memset((*th_data).r_msg, 0, sizeof((*th_data).r_msg));
-        read((*th_data).soc, (*th_data).r_msg, sizeof((*th_data).r_msg));
-        for (int i=0; i<64; i++){
-            printf("%c", (*th_data).r_msg[i]);
+//sends the given string to everyone connected
+void Broadcast_Message(char message[MESSAGE_LENGTH]) {
+    for (int i=0; i<NUMBER_OF_CLIENTS; i++) {
+        if (client_sockets[i] != 0) {
+            write(client_sockets[i], message, MESSAGE_LENGTH);
         }
-        //pthread_mutex_unlock(&mutex_r);
-        //printf("odblokada dla odczytu!\n");
     }
-
-    free(t_data);
-    pthread_exit(NULL);
 }
 
-void *ThreadBehavior_Write(void *t_data) {
+void *ThreadBehavior_ReadAndPass(void *t_data) {
+
+    // odbierz wiadomość od tego użytkownika i przekaż ją wszystkim
 
     pthread_detach(pthread_self());
-
     struct thread_data_t *th_data = (struct thread_data_t*)t_data;
-    //dostęp do pól struktury: (*th_data).pole
+    // dostęp: (*th_data).pole
 
-    // wysyłanie wiadomości do klienta
     while(1) {
-        //pthread_mutex_lock(&mutex_w);
-        //printf("blokada dla zapisu!\n");
-        memset((*th_data).w_msg, 0, sizeof((*th_data).w_msg));
-        fgets((*th_data).w_msg, sizeof((*th_data).w_msg), stdin);
-
-        for (int i=0; i<5; i++) {
-            if (client_sockets[i] != 0) write(client_sockets[i], (*th_data).w_msg, sizeof((*th_data).w_msg));
-        }
-        //bylo: write((*th_data).soc, (*th_data).w_msg, sizeof((*th_data).w_msg));
-
-        //pthread_mutex_unlock(&mutex_w);
-        //printf("odblokada dla zapisu!\n");
+        memset((*th_data).incoming_message, 0, sizeof((*th_data).incoming_message));
+        
+        //odczytanie wiadomości
+        read((*th_data).soc, (*th_data).incoming_message, sizeof((*th_data).incoming_message));
+        Broadcast_Message((*th_data).incoming_message);
     }
 
     free(t_data);
     pthread_exit(NULL);
 }
 
-void handleConnection(int connection_socket_descriptor, int licznik) {
-
-    printf("New user! Took slot: %d\n", licznik);
-    client_sockets[licznik] = connection_socket_descriptor;
+void handleConnection(int connection_socket_descriptor, int user_counter) {
+    printf("New user! Took slot: %d\n", user_counter + 1);
+    client_sockets[user_counter] = connection_socket_descriptor;
 
     pthread_t thread1;
-    pthread_t thread2;
 
-    //struct thread_data_t t_data;
-    
     struct thread_data_t *t_data1;
-    struct thread_data_t *t_data2; 
-
     t_data1 = malloc(sizeof(struct thread_data_t));
-    t_data2 = malloc(sizeof(struct thread_data_t));
-    
-    memset(&t_data1->soc, 0, sizeof(t_data1->soc));
+
     t_data1->soc = connection_socket_descriptor;
-    memset(t_data1->r_msg, 0, sizeof(t_data1->r_msg));
-    memset(t_data1->w_msg, 0, sizeof(t_data1->w_msg));
+    t_data1->licznik = user_counter;
 
-    memset(&t_data2->soc, 0, sizeof(t_data2->soc));
-    t_data2->soc = connection_socket_descriptor;
-    memset(t_data2->r_msg, 0, sizeof(t_data2->r_msg));
-    memset(t_data2->w_msg, 0, sizeof(t_data2->w_msg));
-
-    // Wątek odczytujący wiadomości od klienta
-    int create_result = pthread_create(&thread1, NULL, ThreadBehavior_Read, (void *)t_data1);
-    if (create_result) {
-        printf("Błąd przy próbie utworzenia wątku, kod błędu: %d\n", create_result);
-        exit(1);
-    };
-
-    // Wątek wysyłający wiadomości do wszystkich klientów
-    create_result = pthread_create(&thread2, NULL, ThreadBehavior_Write, (void *)t_data2);
+    int create_result = pthread_create(&thread1, NULL, ThreadBehavior_ReadAndPass, (void *)t_data1);
     if (create_result) {
         printf("Błąd przy próbie utworzenia wątku, kod błędu: %d\n", create_result);
         exit(1);
@@ -125,6 +97,8 @@ int main(int argc, char*argv[]) {
     int connection_socket_descriptor;
     char reuse_addr_val = 1;
     struct sockaddr_in server_address;
+    
+    int msg_num = 0;
 
     // przypisanie numeru portu z argv[1] - pierwszy argument
     if (argc < 2) {
@@ -160,8 +134,8 @@ int main(int argc, char*argv[]) {
         exit(1);
     }
 
-    int licznik = 0;
-    for (int i=0; i<5; i++) client_sockets[i] = 0;
+    int user_counter = 0;
+    memset(client_sockets, 0, sizeof(client_sockets));
 
     while(1) {
         connection_socket_descriptor = accept(server_socket_descriptor, NULL, NULL);
@@ -170,13 +144,12 @@ int main(int argc, char*argv[]) {
             exit(1);
         }
         
-        handleConnection(connection_socket_descriptor, licznik);
-        licznik = (licznik + 1)%5;
+        handleConnection(connection_socket_descriptor, user_counter);
+        user_counter = (user_counter + 1)%NUMBER_OF_CLIENTS;
 
     }
 
     close(server_socket_descriptor);
-    printf("whoopsie");
     return(0);
 
 }
