@@ -13,38 +13,27 @@ import irc.utils.Utils;
  */
 public class Message {
     
-    //private String chanelName;
+    private String chanelName;
     private String username;
     private String time;
     private String content;
     private String idChanel;
 
-    public Message(String idChanel,/*,String chanelName,*/ String username,String time, String content) {
-        this.idChanel=idChanel;
-        //this.chanelName = chanelName;
+    public Message(String chanelName, String username,String time, String content) {
+        this.chanelName = chanelName;
         this.username = username;
         this.time = time;
         this.content = content;
     }
-
-    public String getIdChanel() {
-        return idChanel;
-    }
-
-    public void setIdChanel(String idChanel) {
-        this.idChanel = idChanel;
-    }
-
-  
-
     
-    /*public String getChanelName() {
+    
+    public String getChanelName() {
         return chanelName;
     }
 
     public void setChanelName(String chanelName) {
         this.chanelName = chanelName;
-    }*/
+    }
 
     public String getUsername() {
         return username;
@@ -73,7 +62,7 @@ public class Message {
     @Override
     public String toString() {
         //#4%25%czas;Hejka$
-        return "#4%" + this.idChanel + "%" + this.time + ";" + this.content +"$";
+        return "#4%" + this.chanelName + "%" + this.time + ";" + this.content +"$";
                 
                 
     }

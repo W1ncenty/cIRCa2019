@@ -77,15 +77,14 @@ public class ChatRoomController implements Initializable {
 
             }
         });
-        
-        
+
         userList.setCellFactory(param -> new ListCell<User>() {
             @Override
             protected void updateItem(User item, boolean empty) {
                 if (item != null) {
                     super.updateItem(item, empty);
 
-                    if (empty || item == null || item.getUsername()== null) {
+                    if (empty || item == null || item.getUsername() == null) {
                         setText(null);
                     } else {
                         setText(item.getUsername());
@@ -94,7 +93,7 @@ public class ChatRoomController implements Initializable {
 
             }
         });
-        
+
         allMessages.textProperty().addListener((observable, oldValue, newValue) -> {
             allMessages.setText(newValue);
         });
@@ -103,14 +102,16 @@ public class ChatRoomController implements Initializable {
 
             @Override
             public void changed(ObservableValue<? extends Chanel> observable, Chanel oldValue, Chanel newValue) {
-                allMessages.clear();
+                
                 if (newValue != null) {
+                    allMessages.clear();
                     activeChanel = newValue;
                     activeChanel.getMessages().forEach(message -> {
-                        if (message.getIdChanel().equals(activeChanel.getId())) {
-                            allMessages.appendText(message.formatMessage() + "\n");
+                        if (message.getChanelName().equals(activeChanel.getChanelName())) {
+                            System.out.println("SSS");
+                            updateMessage(message.formatMessage());
                         }
-                    displayUserList();
+                        //displayUserList(); -- blad
                     });
                 }
             }
@@ -149,22 +150,20 @@ public class ChatRoomController implements Initializable {
 
     public void displayMessages() {
         this.waitingForMessagesRunnable = new WaitingForMessages(this.irc);
-
         Thread t = new Thread(this.waitingForMessagesRunnable);
         t.start();
 
     }
 
     public void updateMessage(String messege) {
-        allMessages.appendText(messege);
+        this.allMessages.appendText(messege);
+
     }
 
     public void displayChatroomList() {
         chatRoomList.setItems(irc.getUser().getChanels());
-        if(!irc.getUser().getChanels().isEmpty()){
-            chatRoomList.getSelectionModel().select(0);
-        }
-        
+
+
     }
 
     public void displayUserList() {
@@ -172,18 +171,17 @@ public class ChatRoomController implements Initializable {
     }
 
     private void sendFunction() {
-        if (irc.getUser().getConnected().get() && activeChanel!=null) {
+        if (irc.getUser().getConnected().get() && activeChanel != null) {
             String time = DateTimeFormatter.ofPattern("hh:mm:ss").format(ZonedDateTime.now());
 
             String conntent = messageTextArea.getText();
             conntent = conntent.replaceAll(";", "+;+");
             //4 to wysłanie wiadomości:
-            Message message = new Message(activeChanel.getId(), irc.getUser().getUsername(), time, conntent);
+            Message message = new Message(activeChanel.getChanelName(), irc.getUser().getUsername(), time, conntent);
             irc.getWriter().println(message.toString());
 
             //activeChanel.getMessages().add(message);
             //this.allMessages.appendText(message.formatMessage());
-
             this.messageTextArea.clear();
 
         }
@@ -209,7 +207,14 @@ public class ChatRoomController implements Initializable {
     public ListView<User> getUserList() {
         return userList;
     }
-    
-    
 
+    public TextArea getAllMessages() {
+        return allMessages;
+    }
+
+    public void setAllMessages(TextArea allMessages) {
+        this.allMessages = allMessages;
+    }
+
+    
 }

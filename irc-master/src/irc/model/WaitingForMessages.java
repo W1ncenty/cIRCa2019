@@ -69,12 +69,21 @@ public class WaitingForMessages implements Runnable {
 
             while (!stopped) {
                 Thread.sleep(1000);
+                System.out.println("watek1");
                 String serverMessage = this.reader.readLine();
+                Platform.runLater(
+                        () -> {
+                            this.irc.getUser().getChanels().clear();
+                            this.irc.getAllChanels().clear();
+                            //this.irc.getChatRoomController().getAllMessages().setText(""); //bledy
+
+                        }
+                );
+
                 if (serverMessage.startsWith("#") && serverMessage.endsWith("$")) {
 
-                    System.out.println("watek");
-                   
-                    
+                    System.out.println("watek11");
+
                     String[] rooms = serverMessage.substring(2, serverMessage.length() - 1).split("@");
 
                     for (int i = 0; i < rooms.length; i++) {
@@ -85,8 +94,8 @@ public class WaitingForMessages implements Runnable {
 
                         boolean userInchanel = false;
 
-                        Chanel chanel = new Chanel(chatroomName, Integer.toString(i));
-                        Chanel yourChanel = null;
+                        Chanel chanel = new Chanel(chatroomName);
+
                         for (int j = 0; j < users.length; j++) {
                             String user = users[j];
                             chanel.getUsers().add(new User(user));
@@ -96,28 +105,41 @@ public class WaitingForMessages implements Runnable {
                         }
 
                         String[] messages = string1[2].split(";");
-                        System.out.println(Arrays.toString(messages));
 
                         for (int j = 0; j < messages.length; j++) {
                             if ((j + 1) % 3 == 0) {
-                                Message newMessageObject = new Message(chanel.getId(), messages[j - 2], messages[j - 1], messages[j]);
+                                Message newMessageObject = new Message(chanel.getChanelName(), messages[j - 2], messages[j - 1], messages[j]);
                                 chanel.getMessages().add(newMessageObject);
-                                irc.getChatRoomController().updateMessage(newMessageObject.formatMessage());
+                                if(j == 0){
+                                    irc.getChatRoomController().getAllMessages().setText("");
+                                }
+                                //sprawdz
+                                if (i == 0) {
+                                    irc.getChatRoomController().updateMessage(newMessageObject.formatMessage());
+                                }
+                                
 
                             }
+                        }
+
+                        if (userInchanel) {
+                            Platform.runLater(
+                                    () -> {
+                                        this.irc.getUser().getChanels().add(chanel);
+                                        this.irc.getChatRoomController().displayChatroomList();
+                                    }
+                            );
                         }
 
                         Platform.runLater(
                                 () -> {
                                     // Update UI here.
                                     this.irc.getAllChanels().add(chanel);
-                                    this.irc.getUser().getChanels().add(chanel);
-                                    this.irc.getChatRoomController().displayChatroomList();
                                 }
                         );
 
                     }
-                
+
                 } else {
                     System.out.println("BUBEL");
                 }

@@ -106,9 +106,15 @@ public class MainViewController implements Initializable {
     private void disconnect(ActionEvent event) {
 
         if (irc.getUser().getConnected().get()) {
+            
 
             irc.getChatRoomController().getWaitingForMessagesRunnable().setStopped(true);
 
+            //napisz do servera wychodze ze szystkich pokoi 
+            irc.getUser().getChanels().forEach(x ->
+                    irc.getWriter().println("#3%;" + x.getChanelName()+"$")
+            );
+            
             this.connectionLabel.setTextFill(Color.web("ff0000"));
             try {
                 irc.getSocket().close();
