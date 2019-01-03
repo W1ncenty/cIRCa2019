@@ -10,26 +10,23 @@
 
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="irc.controller.MainViewController">
    <top>
-      <ToolBar prefHeight="20.0" prefWidth="1280.0" BorderPane.alignment="CENTER">
+      <ToolBar prefHeight="45.0" prefWidth="1280.0" BorderPane.alignment="CENTER">
         <items>
+            <Label text="IP:" />
+            <TextField fx:id="ipField" prefHeight="31.0" prefWidth="140.0" />
+            <Label text="Port:" />
+            <TextField fx:id="portField" prefHeight="31.0" prefWidth="42.0" />
             <Label prefHeight="21.0" prefWidth="85.0" text="Nickname:" />
-            <TextField fx:id="nicknameTextArea" />
-          <Button mnemonicParsing="false" onAction="#connect" prefHeight="31.0" prefWidth="106.0" text="Connect" />
-            <Button mnemonicParsing="false" onAction="#disconnect" prefHeight="31.0" prefWidth="106.0" text="Disconnect" />
-            <HBox prefHeight="0.0" prefWidth="200.0">
+            <TextField fx:id="nicknameTextArea" prefHeight="31.0" prefWidth="132.0" />
+          <Button mnemonicParsing="false" onAction="#connect" prefHeight="31.0" prefWidth="80.0" text="Connect" />
+            <Button mnemonicParsing="false" onAction="#disconnect" prefHeight="31.0" prefWidth="95.0" text="Disconnect" />
+            <HBox alignment="CENTER_LEFT" minWidth="-Infinity" prefHeight="31.0" prefWidth="144.0">
                <children>
-                  <HBox alignment="CENTER_LEFT" minWidth="-Infinity" prefHeight="31.0" prefWidth="211.0">
-                     <children>
-                        <Label text="Status: " />
-                        <Label fx:id="connectionLabel" prefHeight="21.0" prefWidth="90.0" text="Label" textFill="RED" />
-                     </children>
-                     <HBox.margin>
-                        <Insets left="15.0" />
-                     </HBox.margin>
-                  </HBox>
+                  <Label text="Status: " />
+                  <Label fx:id="connectionLabel" prefHeight="21.0" prefWidth="90.0" text="Label" textFill="RED" />
                </children>
             </HBox>
-            <HBox alignment="CENTER_RIGHT" prefHeight="31.0" prefWidth="515.0">
+            <HBox alignment="CENTER_RIGHT" prefHeight="31.0" prefWidth="451.0">
                <children>
                   <Button mnemonicParsing="false" onAction="#leaveChatroom" text="Leave Chatroom" />
                   <Button mnemonicParsing="false" onAction="#createChatroom" text="Create Chatroom">

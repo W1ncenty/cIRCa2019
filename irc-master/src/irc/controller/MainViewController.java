@@ -49,6 +49,10 @@ public class MainViewController implements Initializable {
     private Button joinButton;
 
     private irc.IRC irc;
+    @FXML
+    private TextField ipField;
+    @FXML
+    private TextField portField;
 
     /**
      * Initializes the controller class.
@@ -58,33 +62,32 @@ public class MainViewController implements Initializable {
         this.connectionLabel.setText("Disconnected");
 
         Utils.addTextLimiter(nicknameTextArea, 18);
+        Utils.addTextLimiter(ipField, 15);
 
     }
 
     @FXML
     private void connect(ActionEvent event) {
 
-        if (irc.getUser().getUsername() == null && !nicknameTextArea.getText().isEmpty()) {
+        if (irc.getUser().getUsername() == null && !nicknameTextArea.getText().isEmpty() && !ipField.getText().isEmpty() && !portField.getText().isEmpty()) {
             bindUser();
             irc.getChatRoomController().displayChatroomList();
 
             try {
-                Socket socket = new Socket(Utils.IP, Utils.PORT);
-                //BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                Socket socket = new Socket(ipField.getText(), Integer.parseInt(portField.getText()));
                 PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
 
                 irc.setSocket(socket);
-                //irc.setReader(reader);
                 irc.setWriter(writer);
 
                 System.out.println("Connected: " + socket);
 
                 //Sprawdz dostepnosc nickname na serwerze
                 irc.getUser().setUsername(nicknameTextArea.getText());
-                irc.getWriter().println("0" + irc.getUser().getUsername());
                 irc.getUser().setConnected(true);
 
                 if (irc.getSocket() != null) {
+                    irc.getWriter().println("0" + irc.getUser().getUsername());
                     irc.getChatRoomController().getWaitingForMessagesRunnable().setStopped(false);
                     irc.getChatRoomController().displayMessages();
 
@@ -168,12 +171,14 @@ public class MainViewController implements Initializable {
     @FXML
     private void leaveChatroom(ActionEvent event) {
         if (irc.getUser().getConnected().get() && irc.getChatRoomController().getActiveChanel() != null) {
-            System.out.println(irc.getChatRoomController().getActiveChanel().getChanelName());
+            
             Chanel active = irc.getChatRoomController().getActiveChanel();
 
             irc.getWriter().println("3;" + irc.getUser().getUsername() + ";" + active.getChanelName());
-
             irc.getUser().getChanels().remove(active);
+            irc.getChatRoomController().getUserList().getItems().clear();
+            irc.getChatRoomController().getUserList().getItems().clear();
+            irc.getChatRoomController().displayChatroomList();
         }
 
     }

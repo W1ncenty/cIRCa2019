@@ -6,10 +6,12 @@
 package irc.model;
 
 import irc.IRC;
+import irc.controller.ChatRoomController;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collections;
+import javafx.application.Platform;
 import javax.sound.midi.Soundbank;
 
 /**
@@ -62,11 +64,11 @@ public class WaitingForMessages implements Runnable {
     public void run() {
         try {
             this.reader = new BufferedReader(new InputStreamReader(irc.getSocket().getInputStream()));
-            
+
             while (!stopped) {
                 Thread.sleep(1000);
-                System.out.println("watek");
-                String serverMessage = this.reader.readLine();//irc.getReader().readLine();
+
+                String serverMessage = this.reader.readLine();
                 String[] data = serverMessage.split(";");
                 String operation = data[0];
                 Chanel chanel;
@@ -75,31 +77,62 @@ public class WaitingForMessages implements Runnable {
                     case "1":
                         System.out.println(Arrays.toString(data));
 
-                        chanel = new Chanel(data[2]);
+                        Chanel newChanel = new Chanel(data[2]);
 
-                        if (Collections.frequency(irc.getAllChanels(), chanel) < 1) {
-                            this.irc.getAllChanels().add(chanel);
+                        if (Collections.frequency(irc.getAllChanels(), newChanel) < 1) {
+                            this.irc.getAllChanels().add(newChanel);
                         } else {
                             System.out.println("Istnieje taki chatroom");
                         }
-                        this.irc.getAllChanels().add(chanel);
-                        if(data[1].equals(irc.getUser().getUsername())){
-                            irc.getUser().getChanels().add(chanel);
-                        }
 
-//                        if (data[1].equals(irc.getUser().getUsername())) {
-//                            irc.getUser().getChanels().add(chanel);
-//                        } else {
-//                            System.out.println("Someone created chatroom");
-//                        }
+                        
+                        if (data[1].equals(irc.getUser().getUsername())) {
+
+                            Platform.runLater(
+                                    () -> {
+                                        // Update UI here.
+                                        this.irc.getUser().getChanels().add(newChanel);
+                                        this.irc.getChatRoomController().displayChatroomList();
+                                    }
+                            );
+
+                            
+                        } else {
+                            System.out.println("Someone created chatroom");
+                        }
 
                         break;
                     //wejscie do chatroomu
                     case "2":
-                        //serwer odpowiada: 2;username;chatroom
+                        //serwer odpowiada: 2;chatroom;username
                         System.out.println(Arrays.toString(data));
-                        chanel = findChanel(data[2]);
-                        irc.getUser().getChanels().add(chanel);
+                        if (data[2].equals(irc.getUser().getUsername())) {
+                            chanel = findChanel(data[1]);
+
+                            Platform.runLater(
+                                    () -> {
+                                        // Update UI here.
+                                        chanel.getUsers().add(irc.getUser());
+                                        irc.getUser().getChanels().add(chanel);
+                                        this.irc.getChatRoomController().displayUserList();
+                                        this.irc.getChatRoomController().displayChatroomList();
+                                    }
+                            );
+
+                        }
+                        Chanel myChanel = findMyChanel(data[1]);
+                        if (myChanel != null) {
+                            Platform.runLater(
+                                    () -> {
+                                        // Update UI here.
+                                        myChanel.getUsers().add(new User(data[2]));
+                                        this.irc.getChatRoomController().displayUserList();
+                                       
+                                    }
+                            );
+
+                        }
+
                         break;
                     //wyjscie z chatroomu
                     case "3":
@@ -109,7 +142,16 @@ public class WaitingForMessages implements Runnable {
                             break;
                         }
                         if (data[1].equals(irc.getUser().getUsername())) {
-                            irc.getUser().getChanels().remove(chanel);
+                            
+                            Platform.runLater(
+                                    () -> {
+                                        // Update UI here.
+                                        irc.getUser().getChanels().remove(chanel);
+                                        this.irc.getChatRoomController().displayChatroomList();
+                                        this.irc.getChatRoomController().displayUserList();
+                                       
+                                    }
+                            );
                         }
                         break;
                     //wyslano wiadomosc: 4;chanel;czas;uzytkownik;wiadomosc
@@ -120,8 +162,10 @@ public class WaitingForMessages implements Runnable {
                                 System.out.println("Nie ma takiego kanalu");
                                 break;
                             }
-                            Message message = new Message(chanel.getChanelName(), data[3],data[2], data[4]);
+                            Message message = new Message(chanel.getChanelName(), data[2], data[3], data[4]);
                             chanel.getMessages().add(message);
+                            irc.getChatRoomController().updateMessage(message.formatMessage());
+
                             System.out.println(message.toString());
                         }
 
@@ -131,8 +175,6 @@ public class WaitingForMessages implements Runnable {
                         System.out.println(Arrays.toString(data));
 
                 }
-
-                
 
             }
             System.out.println("stoppend");

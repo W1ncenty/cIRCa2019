@@ -47,7 +47,6 @@ public class JoinChanelsController implements Initializable {
 
             public void changed(ObservableValue ov, String value, String new_value) {
                 choosenChatroom = new_value;
-
             }
         });
 
@@ -69,9 +68,12 @@ public class JoinChanelsController implements Initializable {
                 }
             }
             irc.getWriter().println("2;" + irc.getUser().getUsername() + ";" + result.getChanelName());
-
+            
+            result.getUsers().add(irc.getUser());
             irc.getUser().getChanels().add(result);
-            //irc.getChatRoomController().refreshList();
+            
+            irc.getChatRoomController().setActiveChanel(result);
+            irc.getChatRoomController().displayChatroomList();
             cancel(event);
         }
 

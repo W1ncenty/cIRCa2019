@@ -18,7 +18,7 @@ public class User {
 
     private String username;
     BooleanProperty connected;
-    transient private ObservableList<Chanel> chanels = FXCollections.observableArrayList();
+    private ObservableList<Chanel> chanels = FXCollections.observableArrayList();
 
     public User(String username, boolean connected) {
         this.username = username;
@@ -27,6 +27,10 @@ public class User {
 
     public User(boolean connected) {
         this.connected = new SimpleBooleanProperty(connected);
+    }
+    
+    public User(String username){
+        this.username = username;
     }
 
     public String getUsername() {
@@ -52,5 +56,7 @@ public class User {
     public void setChanels(ObservableList<Chanel> chanels) {
         this.chanels = chanels;
     }
+
+    
 
 }

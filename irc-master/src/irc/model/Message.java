@@ -61,7 +61,12 @@ public class Message {
 
     @Override
     public String toString() {
-        return this.time + Utils.padLeft(this.username,20) + " > " + this.content;
+        return "4" + ";" + this.chanelName + ";" + this.username + ";" + this.time + ";" + this.content;
+                
+                
+    }
+    public String formatMessage(){
+        return this.time + Utils.padLeft(this.username,20) + " > " + this.content+"\n";
     }
     
     

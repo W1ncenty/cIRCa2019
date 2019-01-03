@@ -7,6 +7,7 @@ package irc.controller;
 
 import irc.IRC;
 import irc.model.Chanel;
+import irc.model.Message;
 import irc.model.User;
 import irc.model.WaitingForMessages;
 import irc.utils.Utils;
@@ -22,6 +23,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -60,21 +62,60 @@ public class ChatRoomController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
 
-//        chatRoomList.setCellFactory(param -> new ListCell<Chanel>() {
-//            @Override
-//            protected void updateItem(Chanel item, boolean empty) {
-//                //if (item != null) {
-//                    super.updateItem(item, empty);
-//
-//                    if (empty || item == null || item.getChanelName() == null) {
-//                        setText(null);
-//                    } else {
-//                        setText(item.getChanelName());
-//                    }
-//                //}
-//
-//            }
-//        });
+        chatRoomList.setCellFactory(param -> new ListCell<Chanel>() {
+            @Override
+            protected void updateItem(Chanel item, boolean empty) {
+                if (item != null) {
+                    super.updateItem(item, empty);
+
+                    if (empty || item == null || item.getChanelName() == null) {
+                        setText(null);
+                    } else {
+                        setText(item.getChanelName());
+                    }
+                }
+
+            }
+        });
+        
+        
+        userList.setCellFactory(param -> new ListCell<User>() {
+            @Override
+            protected void updateItem(User item, boolean empty) {
+                if (item != null) {
+                    super.updateItem(item, empty);
+
+                    if (empty || item == null || item.getUsername()== null) {
+                        setText(null);
+                    } else {
+                        setText(item.getUsername());
+                    }
+                }
+
+            }
+        });
+        allMessages.textProperty().addListener((observable, oldValue, newValue) -> {
+            allMessages.setText(newValue);
+        });
+
+        chatRoomList.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Chanel>() {
+
+            @Override
+            public void changed(ObservableValue<? extends Chanel> observable, Chanel oldValue, Chanel newValue) {
+                allMessages.clear();
+                if (newValue != null) {
+                    activeChanel = newValue;
+                    activeChanel.getMessages().forEach(message -> {
+                        if (message.getChanelName().equals(activeChanel.getChanelName())) {
+                            allMessages.appendText(message.formatMessage() + "\n");
+                        }
+                    displayUserList();
+                    });
+                    
+
+                }
+            }
+        });
 
     }
 
@@ -115,52 +156,30 @@ public class ChatRoomController implements Initializable {
 
     }
 
-    public void displayChatroomList() {
-        chatRoomList.setItems(irc.getUser().getChanels());
-
-        /*chatRoomList.setCellFactory(param -> new ListCell<Chanel>() {
-            @Override
-            protected void updateItem(Chanel item, boolean empty) {
-                super.updateItem(item, empty);
-                
-                if (empty || item == null || item.getChanelName() == null) {
-                    setText(null);
-                } else {
-                    setText(item.getChanelName());
-                }
-            }
-        });*/
-        chatRoomList.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Chanel>() {
-
-            @Override
-            public void changed(ObservableValue<? extends Chanel> observable, Chanel oldValue, Chanel newValue) {
-                allMessages.clear();
-                activeChanel = newValue;
-                activeChanel.getMessages().forEach(message -> {
-                    if(message.getChanelName().equals(activeChanel.getChanelName())){
-                        allMessages.appendText(message.getContent());
-                    }
-                });
-                //allMessages.appendText(activeChanel.getChanelName());
-            }
-        });
-
+    public void updateMessage(String messege) {
+        allMessages.appendText(messege);
     }
 
-    public void refreshList() {
-        chatRoomList.refresh();
+    public void displayChatroomList() {
+        chatRoomList.setItems(irc.getUser().getChanels());
+    }
+
+    public void displayUserList() {
+        userList.setItems(activeChanel.getUsers());
     }
 
     private void sendFunction() {
-        if (irc.getUser().getConnected().get()) {
+        if (irc.getUser().getConnected().get() && activeChanel!=null) {
             String time = DateTimeFormatter.ofPattern("hh:mm:ss").format(ZonedDateTime.now());
 
-            //3 to wysłanie wiadomości:
-            String clientMessage = "4" + ";" + "chatroom name" + ";" + time + ";" + irc.getUser().getUsername() + ";" + messageTextArea.getText();
-            irc.getWriter().println(clientMessage);
+            //4 to wysłanie wiadomości:
+            Message message = new Message(activeChanel.getChanelName(), irc.getUser().getUsername(), time, messageTextArea.getText());
+            irc.getWriter().println(message.toString());
 
-            this.allMessages.appendText(time + Utils.padLeft(irc.getUser().getUsername(), 20) + " > " + messageTextArea.getText());
-            this.allMessages.appendText("\n");
+            activeChanel.getMessages().add(message);
+
+            this.allMessages.appendText(message.formatMessage());
+
             this.messageTextArea.clear();
 
         }
@@ -178,5 +197,15 @@ public class ChatRoomController implements Initializable {
     public void setActiveChanel(Chanel activeChanel) {
         this.activeChanel = activeChanel;
     }
+
+    public ListView<Chanel> getChatRoomList() {
+        return chatRoomList;
+    }
+
+    public ListView<User> getUserList() {
+        return userList;
+    }
+    
+    
 
 }
