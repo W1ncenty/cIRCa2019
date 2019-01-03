@@ -94,6 +94,7 @@ public class ChatRoomController implements Initializable {
 
             }
         });
+        
         allMessages.textProperty().addListener((observable, oldValue, newValue) -> {
             allMessages.setText(newValue);
         });
@@ -106,13 +107,11 @@ public class ChatRoomController implements Initializable {
                 if (newValue != null) {
                     activeChanel = newValue;
                     activeChanel.getMessages().forEach(message -> {
-                        if (message.getChanelName().equals(activeChanel.getChanelName())) {
+                        if (message.getIdChanel().equals(activeChanel.getId())) {
                             allMessages.appendText(message.formatMessage() + "\n");
                         }
                     displayUserList();
                     });
-                    
-
                 }
             }
         });
@@ -162,6 +161,10 @@ public class ChatRoomController implements Initializable {
 
     public void displayChatroomList() {
         chatRoomList.setItems(irc.getUser().getChanels());
+        if(!irc.getUser().getChanels().isEmpty()){
+            chatRoomList.getSelectionModel().select(0);
+        }
+        
     }
 
     public void displayUserList() {
@@ -172,13 +175,14 @@ public class ChatRoomController implements Initializable {
         if (irc.getUser().getConnected().get() && activeChanel!=null) {
             String time = DateTimeFormatter.ofPattern("hh:mm:ss").format(ZonedDateTime.now());
 
+            String conntent = messageTextArea.getText();
+            conntent = conntent.replaceAll(";", "+;+");
             //4 to wysłanie wiadomości:
-            Message message = new Message(activeChanel.getChanelName(), irc.getUser().getUsername(), time, messageTextArea.getText());
+            Message message = new Message(activeChanel.getId(), irc.getUser().getUsername(), time, conntent);
             irc.getWriter().println(message.toString());
 
-            activeChanel.getMessages().add(message);
-
-            this.allMessages.appendText(message.formatMessage());
+            //activeChanel.getMessages().add(message);
+            //this.allMessages.appendText(message.formatMessage());
 
             this.messageTextArea.clear();
 

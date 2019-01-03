@@ -87,7 +87,8 @@ public class MainViewController implements Initializable {
                 irc.getUser().setConnected(true);
 
                 if (irc.getSocket() != null) {
-                    irc.getWriter().println("0" + irc.getUser().getUsername());
+                    //#0%Wojtek$
+                    irc.getWriter().println("#0%" + irc.getUser().getUsername()+"$");
                     irc.getChatRoomController().getWaitingForMessagesRunnable().setStopped(false);
                     irc.getChatRoomController().displayMessages();
 
@@ -174,11 +175,9 @@ public class MainViewController implements Initializable {
             
             Chanel active = irc.getChatRoomController().getActiveChanel();
 
-            irc.getWriter().println("3;" + irc.getUser().getUsername() + ";" + active.getChanelName());
-            irc.getUser().getChanels().remove(active);
-            irc.getChatRoomController().getUserList().getItems().clear();
-            irc.getChatRoomController().getUserList().getItems().clear();
-            irc.getChatRoomController().displayChatroomList();
+            //#3%chanelname$ - wyjcie z pokoju o id 25
+            irc.getWriter().println("#3%;" + active.getChanelName()+"$");
+            
         }
 
     }

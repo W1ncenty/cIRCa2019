@@ -16,13 +16,20 @@ import javafx.collections.ObservableList;
 public class Chanel {
     
     private String chanelName;
+    private String id;
     private ObservableList<User> users = FXCollections.observableArrayList(); ;
     private ObservableList<Message> messages = FXCollections.observableArrayList();
+
+    public Chanel(String chanelName, String id) {
+        this.chanelName = chanelName;
+        this.id = id;
+    }
 
     public Chanel(String chanelName) {
         this.chanelName = chanelName;
     }
 
+    
     
     public String getChanelName() {
         return chanelName;
@@ -67,9 +74,15 @@ public class Chanel {
         return true;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     
-    
-    
-    
+   
     
 }

@@ -67,13 +67,15 @@ public class JoinChanelsController implements Initializable {
                     break;
                 }
             }
-            irc.getWriter().println("2;" + irc.getUser().getUsername() + ";" + result.getChanelName());
             
-            result.getUsers().add(irc.getUser());
-            irc.getUser().getChanels().add(result);
+            //#2%chanelname$
+            irc.getWriter().println("#2%" + result.getChanelName()+ "$");
             
-            irc.getChatRoomController().setActiveChanel(result);
-            irc.getChatRoomController().displayChatroomList();
+            //result.getUsers().add(irc.getUser());
+            //irc.getUser().getChanels().add(result);
+            
+            //irc.getChatRoomController().setActiveChanel(result);
+            //irc.getChatRoomController().displayChatroomList();
             cancel(event);
         }
 
