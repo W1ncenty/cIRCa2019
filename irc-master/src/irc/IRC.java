@@ -41,7 +41,7 @@ public class IRC extends Application {
     public static ObservableList<Chanel> allChanels = FXCollections.observableArrayList();
     
     private Socket socket;
-    private BufferedReader reader;
+    //private BufferedReader reader;
     private PrintWriter writer;
             
     
@@ -124,13 +124,13 @@ public class IRC extends Application {
         this.socket = socket;
     }
 
-    public BufferedReader getReader() {
+   /* public BufferedReader getReader() {
         return reader;
     }
 
     public void setReader(BufferedReader reader) {
         this.reader = reader;
-    }
+    }*/
 
     public PrintWriter getWriter() {
         return writer;

@@ -6,6 +6,7 @@
 package irc.controller;
 
 import irc.IRC;
+import irc.model.Chanel;
 import irc.model.User;
 import irc.utils.Utils;
 import java.io.BufferedReader;
@@ -69,11 +70,11 @@ public class MainViewController implements Initializable {
 
             try {
                 Socket socket = new Socket(Utils.IP, Utils.PORT);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                //BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
 
                 irc.setSocket(socket);
-                irc.setReader(reader);
+                //irc.setReader(reader);
                 irc.setWriter(writer);
 
                 System.out.println("Connected: " + socket);
@@ -166,7 +167,14 @@ public class MainViewController implements Initializable {
 
     @FXML
     private void leaveChatroom(ActionEvent event) {
-        System.out.println(irc.getChatRoomController().getActiveChanel().getChanelName());
+        if (irc.getUser().getConnected().get() && irc.getChatRoomController().getActiveChanel() != null) {
+            System.out.println(irc.getChatRoomController().getActiveChanel().getChanelName());
+            Chanel active = irc.getChatRoomController().getActiveChanel();
+
+            irc.getWriter().println("3;" + irc.getUser().getUsername() + ";" + active.getChanelName());
+
+            irc.getUser().getChanels().remove(active);
+        }
 
     }
 

@@ -38,7 +38,7 @@ import javafx.scene.input.KeyEvent;
  * @author Weronika
  */
 public class ChatRoomController implements Initializable {
-    
+
     @FXML
     private TextArea messageTextArea;
     @FXML
@@ -49,7 +49,7 @@ public class ChatRoomController implements Initializable {
     private TextArea allMessages;
     @FXML
     private ListView<User> userList;
-    
+
     private irc.IRC irc;
     private WaitingForMessages waitingForMessagesRunnable;
     private Chanel activeChanel;
@@ -59,37 +59,39 @@ public class ChatRoomController implements Initializable {
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        
-        chatRoomList.setCellFactory(param -> new ListCell<Chanel>() {
-            @Override
-            protected void updateItem(Chanel item, boolean empty) {
-                super.updateItem(item, empty);
-                
-                if (empty || item == null || item.getChanelName() == null) {
-                    setText(null);
-                } else {
-                    setText(item.getChanelName());
-                }
-            }
-        });
-        
-        
+
+//        chatRoomList.setCellFactory(param -> new ListCell<Chanel>() {
+//            @Override
+//            protected void updateItem(Chanel item, boolean empty) {
+//                //if (item != null) {
+//                    super.updateItem(item, empty);
+//
+//                    if (empty || item == null || item.getChanelName() == null) {
+//                        setText(null);
+//                    } else {
+//                        setText(item.getChanelName());
+//                    }
+//                //}
+//
+//            }
+//        });
+
     }
-    
+
     public IRC getIrc() {
         return irc;
     }
-    
+
     public void setIrc(IRC irc) {
         this.irc = irc;
     }
-    
+
     @FXML
     private void send(ActionEvent event) {
         sendFunction();
-        
+
     }
-    
+
     @FXML
     private void sendOnEnterPressed(KeyEvent event) {
         if (event.getCode() == KeyCode.ENTER) {
@@ -101,21 +103,22 @@ public class ChatRoomController implements Initializable {
                     sendFunction();
                 }
             }
-            
+
         }
     }
-    
+
     public void displayMessages() {
         this.waitingForMessagesRunnable = new WaitingForMessages(this.irc);
-        
+
         Thread t = new Thread(this.waitingForMessagesRunnable);
-        t.start();        
-        
+        t.start();
+
     }
-    
+
     public void displayChatroomList() {
         chatRoomList.setItems(irc.getUser().getChanels());
-        chatRoomList.setCellFactory(param -> new ListCell<Chanel>() {
+
+        /*chatRoomList.setCellFactory(param -> new ListCell<Chanel>() {
             @Override
             protected void updateItem(Chanel item, boolean empty) {
                 super.updateItem(item, empty);
@@ -126,22 +129,28 @@ public class ChatRoomController implements Initializable {
                     setText(item.getChanelName());
                 }
             }
-        });
-        
+        });*/
         chatRoomList.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Chanel>() {
 
             @Override
             public void changed(ObservableValue<? extends Chanel> observable, Chanel oldValue, Chanel newValue) {
+                allMessages.clear();
                 activeChanel = newValue;
+                activeChanel.getMessages().forEach(message -> {
+                    if(message.getChanelName().equals(activeChanel.getChanelName())){
+                        allMessages.appendText(message.getContent());
+                    }
+                });
+                //allMessages.appendText(activeChanel.getChanelName());
             }
         });
-        
+
     }
-    
+
     public void refreshList() {
         chatRoomList.refresh();
     }
-    
+
     private void sendFunction() {
         if (irc.getUser().getConnected().get()) {
             String time = DateTimeFormatter.ofPattern("hh:mm:ss").format(ZonedDateTime.now());
@@ -149,15 +158,15 @@ public class ChatRoomController implements Initializable {
             //3 to wysłanie wiadomości:
             String clientMessage = "4" + ";" + "chatroom name" + ";" + time + ";" + irc.getUser().getUsername() + ";" + messageTextArea.getText();
             irc.getWriter().println(clientMessage);
-            
+
             this.allMessages.appendText(time + Utils.padLeft(irc.getUser().getUsername(), 20) + " > " + messageTextArea.getText());
             this.allMessages.appendText("\n");
             this.messageTextArea.clear();
-            
+
         }
-        
+
     }
-    
+
     public WaitingForMessages getWaitingForMessagesRunnable() {
         return waitingForMessagesRunnable;
     }
@@ -169,7 +178,5 @@ public class ChatRoomController implements Initializable {
     public void setActiveChanel(Chanel activeChanel) {
         this.activeChanel = activeChanel;
     }
-    
-    
-    
+
 }

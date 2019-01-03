@@ -6,6 +6,8 @@
 package irc.model;
 
 import irc.IRC;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collections;
 import javax.sound.midi.Soundbank;
@@ -19,6 +21,7 @@ public class WaitingForMessages implements Runnable {
     private static boolean stopped = false;
 
     private irc.IRC irc;
+    private BufferedReader reader;
 
     public WaitingForMessages(IRC irc) {
         this.irc = irc;
@@ -58,10 +61,12 @@ public class WaitingForMessages implements Runnable {
     @Override
     public void run() {
         try {
+            this.reader = new BufferedReader(new InputStreamReader(irc.getSocket().getInputStream()));
+            
             while (!stopped) {
                 Thread.sleep(1000);
                 System.out.println("watek");
-                String serverMessage = irc.getReader().readLine();
+                String serverMessage = this.reader.readLine();//irc.getReader().readLine();
                 String[] data = serverMessage.split(";");
                 String operation = data[0];
                 Chanel chanel;
@@ -78,12 +83,15 @@ public class WaitingForMessages implements Runnable {
                             System.out.println("Istnieje taki chatroom");
                         }
                         this.irc.getAllChanels().add(chanel);
-
-                        if (data[1].equals(irc.getUser().getUsername())) {
+                        if(data[1].equals(irc.getUser().getUsername())){
                             irc.getUser().getChanels().add(chanel);
-                        } else {
-                            System.out.println("Someone created chatroom");
                         }
+
+//                        if (data[1].equals(irc.getUser().getUsername())) {
+//                            irc.getUser().getChanels().add(chanel);
+//                        } else {
+//                            System.out.println("Someone created chatroom");
+//                        }
 
                         break;
                     //wejscie do chatroomu
