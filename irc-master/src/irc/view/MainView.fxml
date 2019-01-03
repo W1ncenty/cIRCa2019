@@ -15,7 +15,7 @@
             <Label text="IP:" />
             <TextField fx:id="ipField" prefHeight="31.0" prefWidth="140.0" />
             <Label text="Port:" />
-            <TextField fx:id="portField" prefHeight="31.0" prefWidth="42.0" />
+            <TextField fx:id="portField" prefHeight="31.0" prefWidth="62.0" />
             <Label prefHeight="21.0" prefWidth="85.0" text="Nickname:" />
             <TextField fx:id="nicknameTextArea" prefHeight="31.0" prefWidth="132.0" />
           <Button mnemonicParsing="false" onAction="#connect" prefHeight="31.0" prefWidth="80.0" text="Connect" />
@@ -26,7 +26,7 @@
                   <Label fx:id="connectionLabel" prefHeight="21.0" prefWidth="90.0" text="Label" textFill="RED" />
                </children>
             </HBox>
-            <HBox alignment="CENTER_RIGHT" prefHeight="31.0" prefWidth="451.0">
+            <HBox alignment="CENTER_RIGHT" prefHeight="31.0" prefWidth="430.0">
                <children>
                   <Button mnemonicParsing="false" onAction="#leaveChatroom" text="Leave Chatroom" />
                   <Button mnemonicParsing="false" onAction="#createChatroom" text="Create Chatroom">
