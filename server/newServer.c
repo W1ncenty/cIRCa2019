@@ -26,7 +26,7 @@ pthread_mutex_t mutex_chatrooms = PTHREAD_MUTEX_INITIALIZER;
 struct user_t {
     int socket;
     char name[64];
-    //int chatrooms[64]; // lista pokoi w których znajduje
+    int chatrooms[NUMBER_OF_CHATROOMS]; // lista pokoi w których znajduje
 };
 
 struct chatroom_t {
@@ -48,24 +48,70 @@ struct chatroom_t chatrooms[NUMBER_OF_CHATROOMS];
 
 char incoming_message[MESSAGE_LENGTH];
 
+void deleteUser(int user_id) {
+    int i = user_id;
+    users[i].socket = -1;
+    memset(users[i].name, 0, sizeof(users[i].name));
+    memset(users[i].chatrooms, -1, sizeof(users[i].chatrooms));
+    for (i=0; i<NUMBER_OF_CHATROOMS; i++) for (int j=0; j<NUMBER_OF_CLIENTS; j++) if (chatrooms[i].users[j] == user_id) chatrooms[i].users[j] = -1;
+}
+
+void deleteChatroom(int chatroom_id){
+    int i = chatroom_id;
+    chatrooms[i].id = -1;
+    memset(chatrooms[i].name, 0, sizeof(chatrooms[i].name));
+    memset(chatrooms[i].users, -1, sizeof(chatrooms[i].users));
+    memset(chatrooms[i].messages, 0, sizeof(chatrooms[i].messages[0][0] * 64 * MESSAGE_LENGTH));
+    for (i=0; i<NUMBER_OF_CLIENTS; i++) for (int j=0; j<NUMBER_OF_CHATROOMS; j++) if (users[i].chatrooms[j] == chatroom_id) users[i].chatrooms[j] = -1;
+}
+
+int isChatroomEmpty(int chatroom_id) {
+    for (int i=0; i<64; i++) if (chatrooms[chatroom_id].users[i] > -1) return 0;
+    return 1;
+}
+
 // zwraca ID chatroomu o podanej nazwie
-int getChatroomID(char name[64]){
+int getChatroomIDbyName(char name[64]){
     int exists;
     for (int i=0; i<NUMBER_OF_CHATROOMS; i++){
         exists = i;
-        for (int j=0; j<64; j++) {
-            if (name[j] != chatrooms[i].name[j]) exists = -1;
-        }
+        for (int j=0; j<64; j++) if (name[j] != chatrooms[i].name[j]) exists = -1;
         if (exists > -1) return exists;
     }
     return -1;
 }
 
-int getFristFreeSlotInChatroom(int chatroom_id) { for (int i=0; i<64; i++) if (chatrooms[chatroom_id].users[i] == -1) return i; }
+int getFristFreeSlotInChatroom(int chatroom_id) {
+    for (int i=0; i<64; i++) if (chatrooms[chatroom_id].users[i] == -1) return i;
+    return -1;
+}
+
+int getFirstFreeUserSlot() {
+    for (int i=0; i<NUMBER_OF_CLIENTS; i++) if (users[i].socket == -1) return i;
+    return -1;
+}
 
 int findUserInChatroom(int user_id, int chatroom_id) {
     for (int i=0; i<64; i++) if (chatrooms[chatroom_id].users[i] == user_id) return i;
-    else return 0;
+    else return -1;
+}
+
+void joinChatroom(int user_id, int chatroom_id) {
+    if (findUserInChatroom(user_id, chatroom_id) == -1) {
+        if(getFristFreeSlotInChatroom(chatroom_id) != -1) {
+            chatrooms[chatroom_id].users[getFristFreeSlotInChatroom(chatroom_id)] = user_id;
+        }
+    }
+    int x = 1;
+    for (int i=0; i<NUMBER_OF_CHATROOMS; i++) if (users[user_id].chatrooms[i] == chatroom_id) x = 0;
+    if (x) {
+        for (int i=0; i<NUMBER_OF_CHATROOMS; i++) {
+            if (users[user_id].chatrooms[i] == -1) {
+                users[user_id].chatrooms[i] = chatroom_id;
+                break;
+            }
+        }
+    }
 }
 
 // jeśli pokój nie istnieje, jego ID wynosi -1
@@ -74,6 +120,27 @@ int getFirstFreeChatroomID() {
         if (chatrooms[i].id == -1) return i;
     }
     return -1;
+}
+
+void sendToChatroom(int chatroom_id, char message[MESSAGE_LENGTH], int msg_length){
+    
+    // check if there is space for a message
+    int i, j, spot = -1;
+    for (i=0; i<NUMBER_OF_MESSAGES; i++) {
+        if (chatrooms[chatroom_id].messages[i][0] == 0) { spot = i; break; }
+    }
+
+    if (spot > -1) {
+        for (i=0; i<msg_length; i++) chatrooms[chatroom_id].messages[spot][i] = message[i];
+    } // if there's no space for a new message, forget the oldest (message[0]) and push back the others. Then post new message as message[64]
+    
+    else {
+        for (i=0; i < NUMBER_OF_MESSAGES - 1; i++)
+            for (j=0; j<MESSAGE_LENGTH; j++)
+                chatrooms[chatroom_id].messages[i][j] = chatrooms[chatroom_id].messages[i+1][j];
+        memset(chatrooms[chatroom_id].messages[NUMBER_OF_MESSAGES-1], 0, sizeof(chatrooms[chatroom_id].messages[NUMBER_OF_MESSAGES-1]));
+        for (j=0; j<msg_length; j++) chatrooms[chatroom_id].messages[NUMBER_OF_MESSAGES-1][j] = message[j];
+    }
 }
 
 //sends the given string to everyone connected
@@ -96,12 +163,11 @@ void *Thread_Listening(void *t_data) {
 
     int i, j, k, l;
     char c;
-    char roomname[64];
+    char helpful_string[MESSAGE_LENGTH];
 
     while(1) {
 
         memset((*th_data).incoming_message, 0, sizeof((*th_data).incoming_message));
-        memset(roomname, 0, sizeof(roomname));
 
         //odczytanie wiadomości
         (*th_data).bytes_read = read((*th_data).socket, (*th_data).incoming_message, sizeof((*th_data).incoming_message));
@@ -110,119 +176,148 @@ void *Thread_Listening(void *t_data) {
             
             if ((*th_data).incoming_message[0] == '#') {
                 
-                switch ((*th_data).incoming_message[1]) { // TODO: zapisuj u użytkownika w których jest chatroomach
+                memset(helpful_string, 0, sizeof(helpful_string));
+                switch ((*th_data).incoming_message[1]) { // TODO: zapisuj u użytkownika w których jest chatroomach // TODO: odpowiedzi do klienta
+                                                          // TODO: #4 musi sprawdzać czy użytkownik jest w pokoju
                 
                     case '0': // zmiana nazwy użytkownika
                         for (i=3; i<(*th_data).bytes_read; i++){
                             c = (*th_data).incoming_message[i];
                             if (c != '$') users[(*th_data).user_counter].name[i-3] = c;
-                            else break; //TODO: nadaj listę użytkowników
+                            else break;
                         }
                         break;
 
                     case '1': // utworzenie chatroomu
                         for (i=3; i<(*th_data).bytes_read; i++) {
                             c = (*th_data).incoming_message[i];
-                            if (c != '$') roomname[i] = c;
+                            if (c != '$') helpful_string[i-3] = c;
                             else break;
                         }
-                        if (getChatroomID(roomname) == -1) {
+                        if (getChatroomIDbyName(helpful_string) == -1) {
                             //stwórz chatroom
                             i = getFirstFreeChatroomID();
                             chatrooms[i].id = i;
-                            for (j=0; j<64; j++) chatrooms[i].name[j] = roomname[j];
-                            chatrooms[i].users[0] = (*th_data).user_counter;
+                            for (j=0; j<64; j++) chatrooms[i].name[j] = helpful_string[j];
+
+                            // zapisz użytkownika w chatroomie
+                            joinChatroom((*th_data).user_counter, i);
                         }
                         break;
                     
                     case '2': // dołączenie do chatroomu
                         for (i=3; i<(*th_data).bytes_read; i++) {
                             c = (*th_data).incoming_message[i];
-                            if (c != '$') roomname[i] = c;
+                            if (c != '$') helpful_string[i-3] = c;
                             else break;
                         }
-                        i = getChatroomID(roomname);
+                        i = getChatroomIDbyName(helpful_string);
                         if (i > -1 && findUserInChatroom((*th_data).user_counter, i) == -1) { // pokój istnieje i nie ma w nim użytkownika
-                            chatrooms[i].users[getFristFreeSlotInChatroom(i)] = (*th_data).user_counter;
+                            joinChatroom((*th_data).user_counter, i);
                         }
                         break;
 
-                    case '3': // opuszczenie chatroomu // TODO: jeżeli chatroom jest pusty, usuń go
+                    case '3': // opuszczenie chatroomu
                         for (i=3; i<(*th_data).bytes_read; i++) {
                             c = (*th_data).incoming_message[i];
-                            if (c != '$') roomname[i] = c;
+                            if (c != '$') helpful_string[i-3] = c;
                             else break;
                         }
-                        i = getChatroomID(roomname);
-                        j = findUserInChatroom((*th_data).user_counter, i);
-                        if (i > -1 && j > -1) { // pokój istnieje i jest w nim użytkownik
-                            chatrooms[i].users[j] = -1;
-                        }
+                        i = getChatroomIDbyName(helpful_string); // id chatroomu, z którego wychodzi użytkownik
+                        j = findUserInChatroom((*th_data).user_counter, i); // slot zajmowany obecnie przez użytkownika w chatroomie
+                        if (i > -1 && j > -1) chatrooms[i].users[j] = -1;
+
+                        //wyczysc w tablicy uzytkownika informacje o chatroomie
+                        for (k=0; k<NUMBER_OF_CHATROOMS; k++)
+                            if (users[(*th_data).user_counter].chatrooms[k] == i) users[(*th_data).user_counter].chatrooms[k] = -1;
+                        
+                        if (isChatroomEmpty(i)) deleteChatroom(i);
                         break;
 
                     case '4': // wysłanie wiadomości do chatroomu
                         for (i=3; i<(*th_data).bytes_read; i++) {
                             c = (*th_data).incoming_message[i];
-                            if (c != '%') roomname[i] = c;
+                            if (c != '%') helpful_string[i-3] = c;
                             else break;
                         }
-                        j = i;
-                        i = getChatroomID(roomname);
+
+                        j = i + 1; // od tego znaku zaczyna się wiadomość
+                        i = getChatroomIDbyName(helpful_string); // id chatroomu
+                        
+                        // jeśli chatroom nie istnieje
                         if (i == -1) break;
-                        for (k=0; k<NUMBER_OF_MESSAGES; k++) {
-                            if (chatrooms[i].messages[k][0] == 0) break;
+                        
+                        // jeśli użytkownika nie ma w pokoju
+                        if (findUserInChatroom((*th_data).user_counter, i) == -1) break;
+
+                        // wczytaj wiadomość do tablicy helpful_string
+                        memset(helpful_string, 0, sizeof(helpful_string));
+                        for (k = 0; k<MESSAGE_LENGTH; k++) {
+                            c = (*th_data).incoming_message[j + k];
+                            if (c != '$') helpful_string[k] = (*th_data).incoming_message[j + k];
+                            else break;
                         }
-                        for (l=0; l<MESSAGE_LENGTH; l++) {
-                            if ((*th_data).incoming_message[j] == '$') break;
-                            chatrooms[i].messages[k][l] = (*th_data).incoming_message[j];
-                            j++;
-                        }
+                        sendToChatroom(i, helpful_string, k+1);
+                        printf("%c", helpful_string[0]);
+                        printf("Wysłano wiadomość o długości %d do chatroomu %d\n", k, i);
                         break;
 
                     case 'x':
                         printf("Users:\n");
-                        for (i=0; i<NUMBER_OF_CLIENTS; i++) {
+                        for (i=0; i<getFirstFreeUserSlot(); i++) {
                             for (j=0; j<64; j++) printf("%c", users[i].name[j]);
                             printf("\n");
                         }
-                        printf("\nChatrooms:\n");
-                        for (i=0; i<NUMBER_OF_CHATROOMS; i++) {
+                        printf("Chatrooms:\n");
+                        for (i=0; i<getFirstFreeChatroomID(); i++) {
                             for (j=0; j<64; j++) printf("%c", chatrooms[i].name[j]);
+                            printf("\n");
+                        }
+                        printf("Messages:\n");
+                        for (i=0; i<5; i++) {
+                            for (j=0; j<MESSAGE_LENGTH/2; j++) printf("%c", chatrooms[0].messages[i][j]);
                             printf("\n");
                         }
                         break;
                 }
             }
+            // jeśli wiadomość nie jest jednym z komunikatów (nie zaczyna się od #)
             else Broadcast_Message((*th_data).incoming_message);
         }
         else {
+            // jeśli użytkownik rozłączył się - wyczyść jego dane i zakończ wątek
+            deleteUser((*th_data).user_counter);
             free(t_data);
             pthread_exit(NULL);
         }
-
     }
-
-    //free(t_data);
-    //pthread_exit(NULL);
 }
 
-void handleConnection(int connection_socket_descriptor, int user_counter) {
-    printf("New user! Took slot: %d\n", user_counter + 1);
-    users[user_counter].socket = connection_socket_descriptor;
+void handleConnection(int connection_socket_descriptor) {
+    
+    // znajdź wolne miejsce dla użytkownika. Jeśli nie istnieje, odrzuć połączenie
+    int user_counter = getFirstFreeUserSlot();
+    if (user_counter != -1) {
+        
+        users[user_counter].socket = connection_socket_descriptor;
+        printf("New user! Took slot: %d\n", user_counter + 1);
 
-    pthread_t thread1;
+        pthread_t thread1;
 
-    struct thread_data_t *t_data1;
-    t_data1 = malloc(sizeof(struct thread_data_t));
+        struct thread_data_t *t_data1;
+        t_data1 = malloc(sizeof(struct thread_data_t));
 
-    t_data1->socket = connection_socket_descriptor;
-    t_data1->user_counter = user_counter;
+        t_data1->socket = connection_socket_descriptor;
+        t_data1->user_counter = user_counter;
 
-    // wątek będzie nasłuchiwał komunikatów od klienta
-    if (pthread_create(&thread1, NULL, Thread_Listening, (void *)t_data1)) {
-        printf("Błąd przy próbie utworzenia wątku\n");
-        exit(1);
-    };
+        // wątek będzie nasłuchiwał komunikatów od klienta
+        if (pthread_create(&thread1, NULL, Thread_Listening, (void *)t_data1)) {
+            printf("Błąd przy próbie utworzenia wątku\n");
+            exit(1);
+        };
+
+    } else close(connection_socket_descriptor);
+
 }
 
 int main(int argc, char*argv[]) {
@@ -233,7 +328,7 @@ int main(int argc, char*argv[]) {
     char reuse_addr_val = 1;
     struct sockaddr_in server_address;
     
-    int msg_num = 0;
+    int i, msg_num = 0;
 
     // przypisanie numeru portu z argv[1] - pierwszy argument
     if (argc < 2) {
@@ -268,19 +363,9 @@ int main(int argc, char*argv[]) {
         exit(1);
     }
 
-    int i, user_counter = 0;
-
     //zerowanie struktur
-    for (i=0; i<NUMBER_OF_CLIENTS; i++){
-        users[i].socket = 0;
-        memset(users[i].name, 0, sizeof(users[i].name));
-    }
-    for (i=0; i<NUMBER_OF_CHATROOMS; i++){
-        chatrooms[i].id = -1;
-        memset(chatrooms[i].name, 0, sizeof(chatrooms[i].name));
-        memset(chatrooms[i].users, -1, sizeof(chatrooms[i].users));
-        memset(chatrooms[i].messages, 0, sizeof(chatrooms[i].messages[0][0] * 64 * MESSAGE_LENGTH));
-    }
+    for (i=0; i<NUMBER_OF_CLIENTS; i++) deleteUser(i);
+    for (i=0; i<NUMBER_OF_CHATROOMS; i++) deleteChatroom(i);
 
     while(1) {
         connection_socket_descriptor = accept(server_socket_descriptor, NULL, NULL);
@@ -289,8 +374,7 @@ int main(int argc, char*argv[]) {
             exit(1);
         }
         
-        handleConnection(connection_socket_descriptor, user_counter);
-        user_counter = (user_counter + 1)%NUMBER_OF_CLIENTS;
+        handleConnection(connection_socket_descriptor);
 
     }
 
