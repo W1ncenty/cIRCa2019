@@ -5,9 +5,6 @@
  */
 package irc.utils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.TextField;
@@ -39,37 +36,4 @@ public class Utils {
         return String.format("%1$" + n + "s", s);  
     }
     
-    
- 
-//#dla każdego pokoju:
-//    @nazwa
-//    %username;oddzielone;srednikami
-//    %autorwiadomosci1;czas1;wiadomosc1;autorwiadomosci2;czas2;wiadomosc2
-//$
-//
-//Przykład:
-//
-//#
-//    @polibuda
-//    %pawel;gawel;stasiu;frajer
-//    %pawel;11:11:11;hejka;gawel;11:11:13;sklejka;pawel;11:11:19;XD oblałem 	prologa@domowy%mama;tata;sebek%mama;21:37:00;obiad!;tata;04:20:00;znów wege, Grażyna?$
-//
-//
-//
-    
-    
-
-//    
-    /*public static ArrayList<String[]> decodeFromServer(String string){
-        ArrayList<String[]> list = new ArrayList<String[]>();
-        String[] data = string.substring(1, string.length()-1).split("@");
-        for (int i = 0; i < data.length; i++) {
-            String[] string1 = data[i].split("%");
-            //String chatroomName = string1[0];// - nazwa chatroomu
-            list.add(string1);
-            //System.out.println(Arrays.toString(string1));
-   
-        }
-        return list;        
-    }*/
 }

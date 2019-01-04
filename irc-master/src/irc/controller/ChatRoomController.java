@@ -10,20 +10,12 @@ import irc.model.Chanel;
 import irc.model.Message;
 import irc.model.User;
 import irc.model.WaitingForMessages;
-import irc.utils.Utils;
-import java.io.IOException;
 import java.net.URL;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javafx.application.Platform;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -108,10 +100,9 @@ public class ChatRoomController implements Initializable {
                     activeChanel = newValue;
                     activeChanel.getMessages().forEach(message -> {
                         if (message.getChanelName().equals(activeChanel.getChanelName())) {
-                            System.out.println("SSS");
                             updateMessage(message.formatMessage());
                         }
-                        //displayUserList(); -- blad
+                        displayUserList(); 
                     });
                 }
             }
@@ -180,8 +171,7 @@ public class ChatRoomController implements Initializable {
             Message message = new Message(activeChanel.getChanelName(), irc.getUser().getUsername(), time, conntent);
             irc.getWriter().println(message.toString());
 
-            //activeChanel.getMessages().add(message);
-            //this.allMessages.appendText(message.formatMessage());
+            
             this.messageTextArea.clear();
 
         }

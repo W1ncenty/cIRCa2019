@@ -6,15 +6,9 @@
 package irc.model;
 
 import irc.IRC;
-import irc.controller.ChatRoomController;
-import irc.utils.Utils;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import javafx.application.Platform;
-import javax.sound.midi.Soundbank;
 
 /**
  *
@@ -69,20 +63,15 @@ public class WaitingForMessages implements Runnable {
 
             while (!stopped) {
                 Thread.sleep(1000);
-                System.out.println("watek1");
                 String serverMessage = this.reader.readLine();
                 Platform.runLater(
                         () -> {
                             this.irc.getUser().getChanels().clear();
                             this.irc.getAllChanels().clear();
-                            //this.irc.getChatRoomController().getAllMessages().setText(""); //bledy
-
                         }
                 );
 
                 if (serverMessage.startsWith("#") && serverMessage.endsWith("$")) {
-
-                    System.out.println("watek11");
 
                     String[] rooms = serverMessage.substring(2, serverMessage.length() - 1).split("@");
 
@@ -110,16 +99,20 @@ public class WaitingForMessages implements Runnable {
                             if ((j + 1) % 3 == 0) {
                                 Message newMessageObject = new Message(chanel.getChanelName(), messages[j - 2], messages[j - 1], messages[j]);
                                 chanel.getMessages().add(newMessageObject);
-                                if(j == 0){
-                                    irc.getChatRoomController().getAllMessages().setText("");
-                                }
-                                //sprawdz
-                                if (i == 0) {
-                                    irc.getChatRoomController().updateMessage(newMessageObject.formatMessage());
-                                }
-                                
-
                             }
+                        }
+
+                        if (irc.getChatRoomController().getActiveChanel() == null && userInchanel) {
+                            irc.getChatRoomController().setActiveChanel(chanel);
+                            irc.getChatRoomController().getChatRoomList().getSelectionModel().selectFirst();
+                            irc.getChatRoomController().displayUserList();
+                        }
+
+                        if (irc.getChatRoomController().getActiveChanel() != null
+                                && irc.getChatRoomController().getActiveChanel().getChanelName().equals(chanel.getChanelName())) {
+                            irc.getChatRoomController().getAllMessages().clear();
+                            chanel.getMessages().forEach(message
+                                    -> irc.getChatRoomController().updateMessage(message.formatMessage()));
                         }
 
                         if (userInchanel) {
@@ -129,23 +122,22 @@ public class WaitingForMessages implements Runnable {
                                         this.irc.getChatRoomController().displayChatroomList();
                                     }
                             );
+                        } else {
+                            Platform.runLater(
+                                    () -> {
+                                        // Update UI here.
+                                        this.irc.getAllChanels().add(chanel);
+                                    }
+                            );
                         }
-
-                        Platform.runLater(
-                                () -> {
-                                    // Update UI here.
-                                    this.irc.getAllChanels().add(chanel);
-                                }
-                        );
 
                     }
 
                 } else {
-                    System.out.println("BUBEL");
+                    System.out.println("Zly komunikat");
                 }
 
             }
-            System.out.println("stoppend");
         } catch (Exception e) {
         }
 

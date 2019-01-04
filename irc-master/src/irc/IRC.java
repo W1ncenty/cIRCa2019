@@ -9,7 +9,6 @@ import irc.controller.ChatRoomController;
 import irc.controller.MainViewController;
 import irc.model.Chanel;
 import irc.model.User;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -41,16 +40,9 @@ public class IRC extends Application {
     public static ObservableList<Chanel> allChanels = FXCollections.observableArrayList();
     
     private Socket socket;
-    //private BufferedReader reader;
+    
     private PrintWriter writer;
             
-    
-
-    
-    
-    
-    
-    
     @Override
     public void start(Stage stage) throws Exception {
 
@@ -124,13 +116,6 @@ public class IRC extends Application {
         this.socket = socket;
     }
 
-   /* public BufferedReader getReader() {
-        return reader;
-    }
-
-    public void setReader(BufferedReader reader) {
-        this.reader = reader;
-    }*/
 
     public PrintWriter getWriter() {
         return writer;
@@ -156,9 +141,7 @@ public class IRC extends Application {
         return allChanels;
     }
 
-    public void setAllChanels(ObservableList<Chanel> allChanels) {
-        this.allChanels = allChanels;
-    }
+   
     
     
 
