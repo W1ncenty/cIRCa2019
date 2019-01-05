@@ -51,7 +51,7 @@ struct chatroom_t chatrooms[NUMBER_OF_CHATROOMS];
 
 char server_response[262144];
 
-void update_server_response() {
+int update_server_response() {
     memset(server_response, 0, sizeof(server_response));
     server_response[0] = '#';
     int cc = 1;
@@ -112,7 +112,10 @@ void update_server_response() {
     }
 
     server_response[cc] = '$';
-    server_response[cc+1] = '\n';
+    cc++;
+    server_response[cc] = '\n';
+
+    return cc + 1;
 
 }
 
@@ -196,10 +199,10 @@ void sendToChatroom(int chatroom_id, char message[MESSAGE_LENGTH], int msg_lengt
 }
 
 //sends the given string to everyone connected
-void broadcast_server_response() {
+void broadcast_server_response(int bytes) {
     for (int i=0; i<NUMBER_OF_USERS; i++) {
         if (users[i].socket != -1) {
-            write(users[i].socket, server_response, sizeof(server_response));
+            write(users[i].socket, server_response, bytes);
         }
     }
 }
@@ -211,7 +214,7 @@ void *Thread_Listening(void *t_data) {
     // dostęp: (*th_data).pole
     users[(*th_data).user_counter].name[0] = 'n';
 
-    int i, j, k, l;
+    int i, j, k, l, bytes;
     char c;
     char helpful_string[MESSAGE_LENGTH];
 
@@ -335,8 +338,8 @@ void *Thread_Listening(void *t_data) {
                         }
                         break;
                 }
-                update_server_response();
-                broadcast_server_response();
+                bytes = update_server_response();
+                broadcast_server_response(bytes);
                 pthread_mutex_unlock(&mutex);
             }
             // jeśli wiadomość nie jest jednym z komunikatów (nie zaczyna się od #)
