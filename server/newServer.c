@@ -112,6 +112,7 @@ void update_server_response() {
     }
 
     server_response[cc] = '$';
+    server_response[cc+1] = '\n';
 
 }
 
