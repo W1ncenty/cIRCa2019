@@ -21,6 +21,8 @@
 #define NAME_LENGTH 32
 #define MESSAGE_LENGTH 256
 
+#define RESPONSE_LENGTH 262144
+
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_users = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_chatrooms = PTHREAD_MUTEX_INITIALIZER;
@@ -47,6 +49,72 @@ struct thread_data_t {
 struct user_t users[NUMBER_OF_USERS];
 struct chatroom_t chatrooms[NUMBER_OF_CHATROOMS];
 
+char server_response[262144];
+
+void update_server_response() {
+    memset(server_response, 0, sizeof(server_response));
+    server_response[0] = '#';
+    int cc = 1;
+    for (int i=0; i<NUMBER_OF_CHATROOMS; i++) {
+        if (chatrooms[i].name[0] != 0) {
+
+            // %
+            // wiadomość;wiadomość;wiadomość;
+            // $
+
+            // @nazwa chatroomu pod indeksem [i]
+            server_response[cc] = '@';
+            cc++;
+            for (int j=0; j<NAME_LENGTH; j++) {
+                if (chatrooms[i].name[j] == 0) break;
+                else {
+                    server_response[cc] = chatrooms[i].name[j];
+                    cc++;
+                }
+            }
+
+            // %użytkownicy w chatroomie (nazwy, nie id), oddzieleni średnikiem
+            server_response[cc] = '%';
+            cc++;
+            for (int j=0; j<NUMBER_OF_USERS; j++) {
+                int user_id = chatrooms[i].users[j];
+                if (user_id > -1) {
+                    for (int k=0; k<NAME_LENGTH; k++) {
+                        if (users[user_id].name[k] == 0) break;
+                        else {
+                            server_response[cc] = users[user_id].name[k];
+                            cc++;
+                        }
+                    }
+                    server_response[cc] = ';';
+                    cc++;
+                }
+            }
+
+            // wiadomości:
+            server_response[cc-1] = '%';
+            
+            for (int j=0; j<NUMBER_OF_MESSAGES; j++) {
+                if (chatrooms[i].messages[j][0] != 0) {
+                    for (int k=0; k<MESSAGE_LENGTH; k++) {
+                        if (chatrooms[i].messages[j][k] == 0) break;
+                        else {
+                            server_response[cc] = chatrooms[i].messages[j][k];
+                            cc++;
+                        }
+                    }
+                    server_response[cc] = ';';
+                    cc++;
+                }
+            }
+            cc--;
+        } 
+    }
+
+    server_response[cc] = '$';
+
+}
+
 void deleteUser(int user_id) {
     if (user_id >= 0) {
         users[user_id].socket = -1;
@@ -56,9 +124,9 @@ void deleteUser(int user_id) {
 
 void deleteChatroom(int chatroom_id){
     int i = chatroom_id;
-    if (i >= 0) {
+    if (i > -1) {
         memset(chatrooms[i].name, 0, sizeof(chatrooms[i].name));
-        memset(chatrooms[i].users, -1, sizeof(chatrooms[i].users));
+        for (int j=0; j<NUMBER_OF_USERS; j++) chatrooms[i].users[j] = -1;
         memset(chatrooms[i].messages, 0, sizeof(chatrooms[i].messages[0][0] * NUMBER_OF_MESSAGES * MESSAGE_LENGTH));
     }
 }
@@ -94,6 +162,7 @@ int findUserInChatroom(int user_id, int chatroom_id) {
 }
 
 void joinChatroom(int user_id, int chatroom_id) {
+
     if (findUserInChatroom(user_id, chatroom_id) == -1) {
         int slot = getFristFreeSlotInChatroom(chatroom_id);
         if (slot != -1) {
@@ -126,11 +195,10 @@ void sendToChatroom(int chatroom_id, char message[MESSAGE_LENGTH], int msg_lengt
 }
 
 //sends the given string to everyone connected
-void Broadcast_Message(char message[MESSAGE_LENGTH]) {
+void broadcast_server_response() {
     for (int i=0; i<NUMBER_OF_USERS; i++) {
-        if (users[i].socket != 0) {
-            //write(users[i].socket, message, MESSAGE_LENGTH);
-            write(users[i].socket, users[0].name, NAME_LENGTH);
+        if (users[i].socket != -1) {
+            write(users[i].socket, server_response, sizeof(server_response));
         }
     }
 }
@@ -159,7 +227,7 @@ void *Thread_Listening(void *t_data) {
                 
                 pthread_mutex_lock(&mutex);
                 memset(helpful_string, 0, sizeof(helpful_string));
-                switch ((*th_data).incoming_message[1]) { // TODO: odpowiedzi do klienta
+                switch ((*th_data).incoming_message[1]) {
                 
                     case '0': // zmiana nazwy użytkownika
                         for (i=3; i<(*th_data).bytes_read; i++){
@@ -175,11 +243,12 @@ void *Thread_Listening(void *t_data) {
                             if (c != '$') helpful_string[i-3] = c;
                             else break;
                         }
+
                         if (getChatroomIDbyName(helpful_string) == -1) {
                             //stwórz chatroom
                             i = getFirstFreeChatroomID();
                             if (i > -1) {
-                                for (j=0; j<64; j++) chatrooms[i].name[j] = helpful_string[j];
+                                for (j=0; j<NAME_LENGTH; j++) chatrooms[i].name[j] = helpful_string[j];
                                 joinChatroom((*th_data).user_counter, i);
                             }
                         }
@@ -196,7 +265,7 @@ void *Thread_Listening(void *t_data) {
                             if (findUserInChatroom((*th_data).user_counter, i) == -1){ // pokój istnieje i nie ma w nim użytkownika
                                 joinChatroom((*th_data).user_counter, i);    
                             }
-                        } else printf ("Użytkownik %d spróbował dołączyć do nieistniejącego pokoju\n", (*th_data).user_counter);
+                        }
                         break;
 
                     case '3': // opuszczenie chatroomu
@@ -212,8 +281,7 @@ void *Thread_Listening(void *t_data) {
                         if (isChatroomEmpty(i)) deleteChatroom(i);
                         break;
 
-                    case '4': // wysłanie wiadomości do chatroomu
-                        printf("i cyk czwóreczka\n");
+                    case '4': // wysłanie wiadomości do chatroomu     // zapisz jako: user;czas;wiadomość
                         for (i=3; i<(*th_data).bytes_read; i++) {
                             c = (*th_data).incoming_message[i];
                             if (c != '%') helpful_string[i-3] = c;
@@ -225,11 +293,11 @@ void *Thread_Listening(void *t_data) {
                         
                         // jeśli chatroom nie istnieje
                         if (i == -1) break;
-                        printf("więcej czwóreczki\n");
+                        
                         // jeśli użytkownika nie ma w pokoju
                         if (findUserInChatroom((*th_data).user_counter, i) == -1) break;
 
-                        // wczytaj wiadomość do tablicy helpful_string
+                        // wczytaj wiadomość do tablicy helpful_string     // TODO: wczytaj jeszcze username;
                         memset(helpful_string, 0, sizeof(helpful_string));
                         for (k = 0; k<MESSAGE_LENGTH; k++) {
                             c = (*th_data).incoming_message[j + k];
@@ -259,10 +327,12 @@ void *Thread_Listening(void *t_data) {
                         }
                         break;
                 }
+                update_server_response();
+                broadcast_server_response();
                 pthread_mutex_unlock(&mutex);
             }
             // jeśli wiadomość nie jest jednym z komunikatów (nie zaczyna się od #)
-            // else... Broadcast_Message((*th_data).incoming_message);
+            // else...
         }
         else {
             // jeśli użytkownik rozłączył się - wyczyść jego dane i zakończ wątek
@@ -281,7 +351,7 @@ void handleConnection(int connection_socket_descriptor) {
     if (user_counter != -1) {
         
         users[user_counter].socket = connection_socket_descriptor;
-        printf("New user! Took slot: %d\n", user_counter);
+        printf("New user! Took slot: %d / %d\n", user_counter, NUMBER_OF_USERS-1);
 
         pthread_t thread1;
 
