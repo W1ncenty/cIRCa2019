@@ -7,12 +7,14 @@ package irc.controller;
 
 import irc.IRC;
 import irc.model.Chanel;
+import irc.utils.Utils;
 import java.net.URL;
 import java.util.Collections;
 import java.util.ResourceBundle;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
@@ -28,13 +30,16 @@ public class CreateChanelController implements Initializable {
     
     private Stage stage;
     private irc.IRC irc;
+    @FXML
+    private Label errorLabel;
 
     /**
      * Initializes the controller class.
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // TODO
+ 
+        Utils.addTextLimiter(nameField, 32);
     }
     
     @FXML
@@ -44,15 +49,18 @@ public class CreateChanelController implements Initializable {
             Chanel chanel = new Chanel(nameField.getText());
             
             if (Collections.frequency(irc.getAllChanels(), chanel ) < 1) {
-                
                 irc.getWriter().println("#1%" + nameField.getText() + "$");
             } else {
-                System.out.println("Istnieje taki chatroom");
+                errorLabel.setText("Chatroom exists");
             }
-        }else{
-            System.out.println("Polacz sie");
+            this.stage.close();
+        }if (nameField.getText() != null || nameField.getText().isEmpty()){
+            errorLabel.setText("Empty name");
         }
-        this.stage.close();
+        else{
+            errorLabel.setText("You are disconnected!");
+        }
+        
         
     }
     

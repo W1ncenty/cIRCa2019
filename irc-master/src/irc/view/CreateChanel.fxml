@@ -6,8 +6,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-
-<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8.0.171" fx:controller="irc.controller.CreateChanelController">
+<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="irc.controller.CreateChanelController">
    <children>
       <Button layoutX="530.0" layoutY="355.0" mnemonicParsing="false" onAction="#ok" text="OK" />
       <Button layoutX="444.0" layoutY="355.0" mnemonicParsing="false" onAction="#cancel" text="Cancel" />
@@ -17,5 +16,6 @@
             <Font name="System Bold" size="22.0" />
          </font>
       </Label>
+      <Label fx:id="errorLabel" alignment="CENTER" layoutX="123.0" layoutY="238.0" prefHeight="21.0" prefWidth="355.0" textFill="RED" />
    </children>
 </AnchorPane>
