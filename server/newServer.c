@@ -281,7 +281,7 @@ void *Thread_Listening(void *t_data) {
                         if (isChatroomEmpty(i)) deleteChatroom(i);
                         break;
 
-                    case '4': // wysłanie wiadomości do chatroomu     // zapisz jako: user;czas;wiadomość
+                    case '4': // wysłanie wiadomości do chatroomu     // zapisz jako: user;wiadomość
                         for (i=3; i<(*th_data).bytes_read; i++) {
                             c = (*th_data).incoming_message[i];
                             if (c != '%') helpful_string[i-3] = c;
