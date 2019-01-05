@@ -74,6 +74,9 @@ public class MainViewController implements Initializable {
                 Socket socket = new Socket(ipField.getText(), Integer.parseInt(portField.getText()));
                 PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
 
+                socket.setSoTimeout(60000);
+                
+                
                 irc.setSocket(socket);
                 irc.setWriter(writer);
 

@@ -61,7 +61,7 @@ public class Message {
 
     @Override
     public String toString() {
-        //#4%25%czas;Hejka$
+        //#4%chatroom%czas;Hejka$
         return "#4%" + this.chanelName + "%" + this.time + ";" + this.content +"$";
                 
                 
