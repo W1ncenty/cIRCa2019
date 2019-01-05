@@ -299,13 +299,20 @@ void *Thread_Listening(void *t_data) {
 
                         // wczytaj wiadomość do tablicy helpful_string     // TODO: wczytaj jeszcze username;
                         memset(helpful_string, 0, sizeof(helpful_string));
+                        for (l=0; l<NAME_LENGTH; l++) {
+                            c = users[(*th_data).user_counter].name[l];
+                            if (c != 0) helpful_string[l] = c;
+                            else break;
+                        }
+                        helpful_string[l] = ';';
+                        l++;
                         for (k = 0; k<MESSAGE_LENGTH; k++) {
                             c = (*th_data).incoming_message[j + k];
-                            if (c != '$') helpful_string[k] = (*th_data).incoming_message[j + k];
+                            if (c != '$') helpful_string[l + k] = (*th_data).incoming_message[j + k];
                             else break;
                         }
 
-                        sendToChatroom(i, helpful_string, k+1);
+                        sendToChatroom(i, helpful_string, l+k+1);
                         printf("Wysłano wiadomość o długości %d do chatroomu %d\n", k, i);
                         break;
 
