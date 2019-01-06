@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ "$1" != "" ]; then
+    cd ./server
+    gcc -pthread newServer.c -o ns
+    ./ns $1
+
+else
+    echo "podaj numer portu"
+fi

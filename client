@@ -1,0 +1,4 @@
+#!/bin/bash
+    
+cd ./irc-master/dist
+java -jar IRC-client.jar
