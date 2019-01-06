@@ -140,23 +140,6 @@ public class IRC extends Application {
     public ObservableList<Chanel> getAllChanels() {
         return allChanels;
     }
-
-   
-    
-    
-
-  
-
-    
-   
-    
-    
-    
-
-
-    
-    
-    
     
     
     /**

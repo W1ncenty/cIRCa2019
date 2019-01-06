@@ -40,7 +40,6 @@ public class JoinChanelsController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         irc.allChanels.forEach(x -> {
-            System.out.println(x);
             choiceBox.getItems().add(x.getChanelName());
         });
         

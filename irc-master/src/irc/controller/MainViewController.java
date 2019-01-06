@@ -88,6 +88,7 @@ public class MainViewController implements Initializable {
 
                 if (irc.getSocket() != null) {
                     //#0%Wojtek$
+                    //set username
                     irc.getWriter().println("#0%" + irc.getUser().getUsername()+"$");
                     irc.getChatRoomController().getWaitingForMessagesRunnable().setStopped(false);
                     irc.getChatRoomController().displayMessages();
@@ -107,13 +108,12 @@ public class MainViewController implements Initializable {
 
         if (irc.getUser().getConnected().get()) {
             
-
-            irc.getChatRoomController().getWaitingForMessagesRunnable().setStopped(true);
-
             //napisz do servera wychodze ze szystkich pokoi 
             irc.getUser().getChanels().forEach(x ->
                     irc.getWriter().println("#3%;" + x.getChanelName()+"$")
             );
+            
+            irc.getChatRoomController().getWaitingForMessagesRunnable().setStopped(true);
             
             this.connectionLabel.setTextFill(Color.web("ff0000"));
             try {
