@@ -9,6 +9,7 @@ import irc.IRC;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.SocketTimeoutException;
+import java.util.Arrays;
 import javafx.application.Platform;
 
 /**
@@ -60,42 +61,59 @@ public class WaitingForMessages implements Runnable {
     @Override
     public void run() {
         try {
-            this.reader = new BufferedReader(new InputStreamReader(irc.getSocket().getInputStream()));
-
+            //this.reader = new BufferedReader(new InputStreamReader(irc.getSocket().getInputStream()));
             while (!stopped) {
-                Thread.sleep(1000);
-                try {
-                    String serverMessage = this.reader.readLine();
-                    Platform.runLater(
-                            () -> {
-                                this.irc.getUser().getChanels().clear();
-                                this.irc.getAllChanels().clear();
+                //Thread.sleep(1000);
+                
+                this.reader = new BufferedReader(new InputStreamReader(irc.getSocket().getInputStream()));
+                String serverMessage = this.reader.readLine();
+                
+                //Czszczenie pustych komorek
+                serverMessage = serverMessage.substring(serverMessage.indexOf("#"));
+                
+                
+                Platform.runLater(
+                        () -> {
+                            this.irc.getUser().getChanels().clear();
+                            this.irc.getAllChanels().clear();
+                        }
+                );
+                
+                
+                if (serverMessage.startsWith("#") && serverMessage.endsWith("$") && serverMessage.length()>2) {
+                    String[] rooms = serverMessage.substring(2, serverMessage.length() - 1).split("@");
+
+                    System.out.println(Arrays.toString(rooms));
+
+                    for (int i = 0; i < rooms.length; i++) {
+                        String[] string1 = rooms[i].split("%");
+                        String chatroomName = string1[0];// - nazwa chatroomu
+                        System.out.println(chatroomName);
+
+                        String[] users = string1[1].split(";");
+
+                        boolean userInchanel = false;
+
+                        System.out.println(Arrays.toString(users));
+                        Chanel chanel = new Chanel(chatroomName);
+
+                        for (int j = 0; j < users.length; j++) {
+                            String user = users[j];
+                            chanel.getUsers().add(new User(user));
+                            if (userInchanel == false && user.equals(this.irc.getUser().getUsername())) {
+                                userInchanel = true;
                             }
-                    );
+                        }
 
-                    if (serverMessage.startsWith("#") && serverMessage.endsWith("$")) {
+                        System.out.println("Linia 103");
 
-                        String[] rooms = serverMessage.substring(2, serverMessage.length() - 1).split("@");
-
-                        for (int i = 0; i < rooms.length; i++) {
-                            String[] string1 = rooms[i].split("%");
-                            String chatroomName = string1[0];// - nazwa chatroomu
-
-                            String[] users = string1[1].split(";");
-
-                            boolean userInchanel = false;
-
-                            Chanel chanel = new Chanel(chatroomName);
-
-                            for (int j = 0; j < users.length; j++) {
-                                String user = users[j];
-                                chanel.getUsers().add(new User(user));
-                                if (userInchanel == false && user.equals(this.irc.getUser().getUsername())) {
-                                    userInchanel = true;
-                                }
-                            }
-
+                        if (string1.length > 2) {
+                            System.out.println(string1[2]);
+                            
                             String[] messages = string1[2].split(";");
+                            
+                            System.out.println(Arrays.toString(messages));
+                            System.out.println("Dlugosc wiadomosci: " + messages.length);
 
                             for (int j = 0; j < messages.length; j++) {
                                 if ((j + 1) % 3 == 0) {
@@ -104,43 +122,47 @@ public class WaitingForMessages implements Runnable {
                                 }
                             }
 
-                            if (irc.getChatRoomController().getActiveChanel() == null && userInchanel) {
-                                irc.getChatRoomController().setActiveChanel(chanel);
-                                irc.getChatRoomController().getChatRoomList().getSelectionModel().selectFirst();
-                                irc.getChatRoomController().displayUserList();
-                            }
-
-                            if (irc.getChatRoomController().getActiveChanel() != null
-                                    && irc.getChatRoomController().getActiveChanel().getChanelName().equals(chanel.getChanelName())) {
-                                irc.getChatRoomController().getAllMessages().clear();
-                                chanel.getMessages().forEach(message
-                                        -> irc.getChatRoomController().updateMessage(message.formatMessage()));
-                            }
-
-                            if (userInchanel) {
-                                Platform.runLater(
-                                        () -> {
-                                            this.irc.getUser().getChanels().add(chanel);
-                                            this.irc.getChatRoomController().displayChatroomList();
-                                        }
-                                );
-                            } else {
-                                Platform.runLater(
-                                        () -> {
-                                            // Update UI here.
-                                            this.irc.getAllChanels().add(chanel);
-                                        }
-                                );
-                            }
-
                         }
 
-                    } else {
-                        System.out.println("Zly komunikat");
+                        if (irc.getChatRoomController().getActiveChanel() == null && userInchanel) {
+                            irc.getChatRoomController().setActiveChanel(chanel);
+                            irc.getChatRoomController().getChatRoomList().getSelectionModel().selectFirst();
+                            
+                            System.out.println("XXX");
+                        }
+
+                        if (irc.getChatRoomController().getActiveChanel() != null
+                                && irc.getChatRoomController().getActiveChanel().getChanelName().equals(chanel.getChanelName())) {
+                            irc.getChatRoomController().getAllMessages().clear();
+                            chanel.getMessages().forEach(message
+                                    -> irc.getChatRoomController().updateMessage(message.formatMessage()));
+                            System.out.println("Rozne od null");
+ 
+                        }
+                        
+                        System.out.println(userInchanel);
+                        if (userInchanel) {
+                            Platform.runLater(
+                                    () -> {
+                                        this.irc.getUser().getChanels().add(chanel);
+                                        this.irc.getChatRoomController().displayChatroomList();
+                                        irc.getChatRoomController().displayUserList();
+                                    }
+                            );
+                        } else {
+                            Platform.runLater(
+                                    () -> {
+                                        // Update UI here.
+                                        this.irc.getAllChanels().add(chanel);
+                                        irc.getChatRoomController().displayUserList();
+                                    }
+                            );
+                        }
+
                     }
-                } catch (SocketTimeoutException s) {
-                    System.out.println("Socket timed out!");
-                    break;
+
+                } else {
+                    System.out.println("Zly komunikat");
                 }
 
             }
