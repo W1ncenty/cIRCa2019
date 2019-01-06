@@ -42,6 +42,7 @@ public class JoinChanelsController implements Initializable {
         irc.allChanels.forEach(x -> {
             choiceBox.getItems().add(x.getChanelName());
         });
+        
 
         choiceBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
 

@@ -49,6 +49,7 @@ public class CreateChanelController implements Initializable {
             Chanel chanel = new Chanel(nameField.getText());
             
             if (Collections.frequency(irc.getAllChanels(), chanel ) < 1) {
+                //create chatroom
                 irc.getWriter().println("#1%" + nameField.getText() + "$");
             } else {
                 errorLabel.setText("Chatroom exists");
