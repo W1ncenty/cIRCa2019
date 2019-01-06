@@ -161,8 +161,9 @@ int getFirstFreeUserSlot() {
 }
 
 int findUserInChatroom(int user_id, int chatroom_id) {
+    printf("szukam usera %d w chatroomie %d\n", user_id, chatroom_id);
     for (int i=0; i<NUMBER_OF_USERS; i++) if (chatrooms[chatroom_id].users[i] == user_id) return i;
-    else return -1;
+    return -1;
 }
 
 void joinChatroom(int user_id, int chatroom_id) {
@@ -292,14 +293,20 @@ void *Thread_Listening(void *t_data) {
                             else break;
                         }
 
+                        
                         j = i + 1; // od tego znaku zaczyna się wiadomość
                         i = getChatroomIDbyName(helpful_string); // id chatroomu
+                        printf("user %d wysyla wiadomosc do chatroomu %d\n", (*th_data).user_counter, i);
                         
                         // jeśli chatroom nie istnieje
                         if (i == -1) break;
                         
+                        printf("%d, %d, %d", chatrooms[0].users[0], chatrooms[0].users[1], chatrooms[0].users[2]);
+
                         // jeśli użytkownika nie ma w pokoju
                         if (findUserInChatroom((*th_data).user_counter, i) == -1) break;
+
+                        printf("chatroom istnieje i user jest w pokoju\n");
 
                         // wczytaj wiadomość do tablicy helpful_string     // TODO: wczytaj jeszcze username;
                         memset(helpful_string, 0, sizeof(helpful_string));
@@ -315,6 +322,8 @@ void *Thread_Listening(void *t_data) {
                             if (c != '$') helpful_string[l + k] = (*th_data).incoming_message[j + k];
                             else break;
                         }
+
+                        printf("wiadomosc wczytana do stringa\n");
 
                         sendToChatroom(i, helpful_string, l+k+1);
                         printf("Wysłano wiadomość o długości %d do chatroomu %d\n", k, i);
