@@ -28,6 +28,7 @@ import javafx.stage.Stage;
  * 
  *
  * @author Weronika
+ * Main class
  */
 public class IRC extends Application {
 
