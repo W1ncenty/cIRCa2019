@@ -1,2 +1,2 @@
 # cIRCa2019
-Projekt zaliczeniowy SK2
+An IRC application using Java & C.
